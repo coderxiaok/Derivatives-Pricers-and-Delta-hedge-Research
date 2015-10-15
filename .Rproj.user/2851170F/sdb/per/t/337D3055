@@ -1,0 +1,18 @@
+{
+    "contents" : "## Asian Floating-Strike Call Option\n## Author: Ming Tian\n## Date: 2015-05-06\n## Copyright @2015 MingTian\n\n#assign the parameters firstly\nmu = 0  #mean\nsig = 0.2  #sigma/annulaized volitility\nS0 = 100  #start stock price\nr = 0  #interest rate\nq = 0  #dividends of stock\ndt = 1/252  #time step\nT_m = 1  #maturity time\ntype = \"c\"  #option type\n\n# 20150913 update version\nRandom.Path.New <- function(S0_ = S0, sig_ = sig, mu_ = mu, dt_ = dt, T_m_ = T_m, n_path) {\n  # generate the random vector\n  rand_vec <- rlnorm(n=(T_m_/dt_)*n_path, meanlog = mu_ - 0.5*((sig_*sqrt(1/252))^2), sdlog = sig_*sqrt(1/252))\n  \n  # build the result\n  result <- matrix(data=rand_vec, nrow=n_path, ncol=(T_m_/dt_))\n  \n  # apply the function to transform to the price ts\n  result[, 1] <- S0_\n  result_new <- t(apply(result, 1, function(x) {\n    cumprod(x)\n  }))\n  \n  # return the result\n  result_new\n}\n\n#define a payoff function for Asian Floating Strike Option\nAFS.Payoff <- function(Price_ts, type = \"c\")\n{\n  if(type == \"c\")  #Call\n  {\n    payoff_tmp <- Price_ts[length(Price_ts)] - mean(Price_ts)\n    payoff <- max(0, payoff_tmp)\n  }\n  else  #Put\n  {\n    payoff_tmp <- mean(Price_ts) - Price_ts[length(Price_ts)]\n    payoff <- max(0, payoff_tmp)\n  }\n  \n  # return the result\n  payoff\n}\n\n# 20150917 updated\nAFS.Payoff.Vectorization <- function(PayoffFunc, S0_ = S0, sig_ = sig, sig_DH = sig, \n                                     mu_ = mu, dt_ = dt, T_m_ = T_m, n_path_ = 10000, type = \"c\")\n{\n  #Call the Random.Path function firstly\n  rand_path <- Random.Path.New(n_path = n_path_)\n  \n  #build a result container\n  result <- matrix(1:(n_path_*2), ncol = 2)\n  result[, 1] <- rand_path[, ncol(rand_path)]\n  #decide the option type\n  if(type == \"c\")  #Call\n  {\n    payofffunc <- function(x) {\n      # calculate option Payoff\n      Opt_payoff <- PayoffFunc(Price_ts = x, type = type)\n      # return\n      Opt_payoff\n    }\n    \n    result[, 2] <- apply(rand_path, 1, payofffunc)\n  }\n  else  #Put\n  {\n    payofffunc <- function(x) {\n      # calculate option Payoff\n      Opt_payoff <- PayoffFunc(Price_ts = x, type = type)\n      # return\n      Opt_payoff\n    }\n    \n    result[, 2] <- apply(rand_path, 1, payofffunc)\n  }\n  #return\n  result\n}\n\n# call test\ntest <- AFS.Payoff.Vectorization(PayoffFunc = AFS.Payoff)\nplot(test[, 1], test[, 2], col=\"blue\", cex=0.5)\n\n# put test\ntest <- AFS.Payoff.Vectorization(PayoffFunc = AFS.Payoff, type = \"p\")\nplot(test[, 1], test[, 2], col=\"blue\", cex=0.5)\n",
+    "created" : 1444879971223.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3735138073",
+    "id" : "337D3055",
+    "lastKnownWriteTime" : 1444880041,
+    "path" : "~/Derivatives Pricers and Delta-hedge Research/Asian Floating-Strike Option.R",
+    "project_path" : "Asian Floating-Strike Option.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
